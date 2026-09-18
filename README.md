@@ -2,7 +2,7 @@
 
 BiLSTM + statistical priors. 6 wrong tries max. 56.2% win rate on 5,000 held-out words.
 
-**Live demo:** [https://hangman-solver-hm4ge6wiw9hhtfmwmxvsmb.streamlit.app/](https://hangman-solver-hm4ge6wiw9hhtfmwmxvsmb.streamlit.app/)
+**Live demo:** [https://hangman-solver-53u4rjwbrvbdyxqf4nsbnd.streamlit.app/](https://hangman-solver-53u4rjwbrvbdyxqf4nsbnd.streamlit.app/)
 
 ## How it works
 
@@ -33,7 +33,7 @@ Then open http://localhost:8501
 
 ## Deploy on Streamlit Community Cloud
 
-The app is already live at [https://hangman-solver-hm4ge6wiw9hhtfmwmxvsmb.streamlit.app/](https://hangman-solver-hm4ge6wiw9hhtfmwmxvsmb.streamlit.app/).
+The app is already live at [https://hangman-solver-53u4rjwbrvbdyxqf4nsbnd.streamlit.app/](https://hangman-solver-53u4rjwbrvbdyxqf4nsbnd.streamlit.app/).
 
 To deploy your own copy:
 
