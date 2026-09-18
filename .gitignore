@@ -1,0 +1,38 @@
+# --- Project-private notes (interview prep / internal details) ---
+PROJECT_NOTES.md
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Streamlit ---
+.streamlit/secrets.toml
+
+# --- Model weight cache (legacy) ---
+**/_weights_cache/
+
+# --- Scratch / temp extraction files ---
+_extract.py
+_cells_*.txt
+_train_cells.txt
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
