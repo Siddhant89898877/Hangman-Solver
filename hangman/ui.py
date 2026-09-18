@@ -243,6 +243,15 @@ html, body, [class*="css"] {
 .badge-miss { background: #d6453a; color: #fff0ee; }
 .guess-meta { color: #a8bdb0; }
 
+.replay-caption {
+  text-align: center;
+  color: #8fa897;
+  font-size: 0.86rem;
+  margin: 0.15rem 0 0.85rem 0;
+}
+.replay-caption strong { color: #d5e6db; font-weight: 700; }
+div[data-testid="stSlider"] { padding-top: 0.15rem; }
+
 .preview-box {
   margin: 0.35rem 0 0.7rem 0;
   padding: 0.7rem 0.9rem;
@@ -474,32 +483,116 @@ def start_solve(word: str) -> None:
     st.session_state.animating = True
 
 
+def _clamp_step(value: int, max_step: int) -> int:
+    return max(0, min(int(max_step), int(value)))
+
+
+def _nudge_replay(delta: int, max_step: int) -> None:
+    current = int(st.session_state.get("step_idx", 0) or 0)
+    st.session_state.step_idx = _clamp_step(current + delta, max_step)
+
+
+def _jump_replay(target: int, max_step: int) -> None:
+    st.session_state.step_idx = _clamp_step(target, max_step)
+
+
+def _step_caption(result: GameResult, step_idx: int) -> str:
+    total = int(result.n_guesses)
+    if step_idx <= 0:
+        return f'Step <strong>0 / {total}</strong> · before any guesses'
+    step = result.steps[step_idx - 1]
+    kind = "HIT" if step.hit else "MISS"
+    return (
+        f"Step <strong>{step_idx} / {total}</strong> · "
+        f"guessed <strong>'{step.letter}'</strong> · {kind}"
+    )
+
+
+def _render_replay_frame(result: GameResult, step_idx: int, n: int) -> None:
+    render_board(result, step_idx)
+    if n > 0 and step_idx == n:
+        render_result_banner(result)
+    render_guess_log(result, up_to=step_idx)
+
+
 def render_playback(result: GameResult) -> None:
-    n = result.n_guesses
-    animating = bool(st.session_state.animating)
-    step_idx = max(0, min(int(st.session_state.step_idx), n))
+    n = int(result.n_guesses)
+    max_step = max(n, 0)
+
+    # Clamp before the keyed slider exists this run. Do not write the same
+    # key after st.slider, or Streamlit 1.34+ will snap the thumb back.
+    if "step_idx" not in st.session_state:
+        st.session_state.step_idx = 0
+    elif int(st.session_state.step_idx) != _clamp_step(st.session_state.step_idx, max_step):
+        st.session_state.step_idx = _clamp_step(st.session_state.step_idx, max_step)
 
     st.divider()
-    if animating:
+    if st.session_state.animating:
         slot = st.empty()
         for idx in range(n + 1):
             with slot.container():
-                render_board(result, idx)
-                if idx == n:
-                    render_result_banner(result)
-                render_guess_log(result, up_to=idx)
+                _render_replay_frame(result, idx, n)
             if idx < n:
                 time.sleep(STEP_DELAY_SEC)
         st.session_state.step_idx = n
         st.session_state.animating = False
         st.rerun()
 
-    step_idx = st.slider("Replay step", min_value=0, max_value=n, value=step_idx)
-    st.session_state.step_idx = step_idx
-    render_board(result, step_idx)
-    if step_idx == n:
-        render_result_banner(result)
-    render_guess_log(result, up_to=step_idx)
+    step_now = _clamp_step(st.session_state.step_idx, max_step)
+    first, prev, nxt, last = st.columns(4)
+    first.button(
+        "⏮ First",
+        use_container_width=True,
+        disabled=step_now <= 0,
+        on_click=_jump_replay,
+        args=(0, max_step),
+        key="replay_first",
+    )
+    prev.button(
+        "◀ Prev",
+        use_container_width=True,
+        disabled=step_now <= 0,
+        on_click=_nudge_replay,
+        args=(-1, max_step),
+        key="replay_prev",
+    )
+    nxt.button(
+        "Next ▶",
+        use_container_width=True,
+        disabled=step_now >= max_step,
+        on_click=_nudge_replay,
+        args=(1, max_step),
+        key="replay_next",
+    )
+    last.button(
+        "Last ⏭",
+        use_container_width=True,
+        disabled=step_now >= max_step,
+        on_click=_jump_replay,
+        args=(max_step, max_step),
+        key="replay_last",
+    )
+
+    if n > 0:
+        st.slider(
+            "Replay step",
+            min_value=0,
+            max_value=n,
+            step=1,
+            key="step_idx",
+            help="Drag to a guess, then release. The board, gallows, and log follow this step.",
+        )
+    else:
+        st.caption("No guesses to replay.")
+
+    step_idx = _clamp_step(st.session_state.step_idx, max_step)
+    st.markdown(
+        f'<p class="replay-caption">{_step_caption(result, step_idx)}</p>',
+        unsafe_allow_html=True,
+    )
+    # Keyed container remounts custom HTML so the board cannot stick on an old step.
+    with st.container(key=f"replay_frame_{step_idx}"):
+        _render_replay_frame(result, step_idx, n)
 
 
 def main() -> None:
